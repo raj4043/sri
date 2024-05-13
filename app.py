@@ -1,47 +1,24 @@
-import streamlit as st 
-from pandasai.llm.openai import OpenAI
-from dotenv import load_dotenv
-import os
-import pandas as pd
-from pandasai import PandasAI
+from flask import Flask, jsonify, request, render_template
 
-load_dotenv()
+app = Flask(__name__)
 
+# Placeholder for user queries and responses
+query_responses = {
+    'What are the sales trends?': 'Sales have been increasing steadily.',
+    'What is the status of Product A?': 'Product A is out of stock.',
+    'Any updates on the marketing campaign?': 'New marketing campaign launched.',
+    'default': "I'm sorry, I couldn't understand your query."
+}
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
+@app.route('/')
+def chat():
+    return render_template('index.html')
 
+@app.route('/query', methods=['POST'])
+def process_query():
+    query = request.json['query']
+    response = query_responses.get(query, query_responses['default'])
+    return jsonify({'response': response})
 
-def chat_with_csv(df,prompt):
-    llm = OpenAI(api_token=openai_api_key)
-    pandas_ai = PandasAI(llm)
-    result = pandas_ai.run(df, prompt=prompt)
-    print(result)
-    return result
-
-st.set_page_config(layout='wide')
-
-st.title("ChatCSV powered by LLM")
-
-input_csv = st.file_uploader("Upload your CSV file", type=['csv'])
-
-if input_csv is not None:
-
-        col1, col2 = st.columns([1,1])
-
-        with col1:
-            st.info("CSV Uploaded Successfully")
-            data = pd.read_csv(input_csv)
-            st.dataframe(data, use_container_width=True)
-
-        with col2:
-
-            st.info("Chat Below")
-            
-            input_text = st.text_area("Enter your query")
-
-            if input_text is not None:
-                if st.button("Chat with CSV"):
-                    st.info("Your Query: "+input_text)
-                    result = chat_with_csv(data, input_text)
-                    st.success(result)
-
+if __name__ == '__main__':
+    app.run(debug=True)
